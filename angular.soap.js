@@ -12,13 +12,13 @@ angular.module('angularSoap', [])
 			}
 			
 			//Create Callback
-			var soapCallback = function(e){
-				if(e.constructor.toString().indexOf("function Error()") != -1){
-					deferred.reject("An error has occurred.");
-				} else {
-					deferred.resolve(e);
-				}
-			}
+            var soapCallback = function (e, status) {
+                if (e == null || e.constructor.toString().indexOf("function Error()") != -1) {
+                    deferred.reject("An error has occurred " + status);
+                } else {
+                    deferred.resolve(e);
+                }
+            }
 			
 			SOAPClient.invoke(url, action, soapParams, true, soapCallback);
 

@@ -1,5 +1,4 @@
 /*****************************************************************************\
-
  Javascript "SOAP Client" library
  
  @version: 2.4 - 2007.12.21
@@ -138,11 +137,18 @@ SOAPClient._loadWsdl = function(url, method, parameters, async, callback)
 	{
 		xmlHttp.onreadystatechange = function() 
 		{
-			if(xmlHttp.readyState == 4)
-				SOAPClient._onLoadWsdl(url, method, parameters, async, callback, xmlHttp);
+            
+            if (xmlHttp.readyState === 4) {
+                if (xmlHttp.status === 200) {
+                    SOAPClient._onLoadWsdl(url, method, parameters, async, callback, xmlHttp);
+                } else {
+                    callback(null, xmlHttp.statusText);
+                }
+            }  
 		}
 	}
-	xmlHttp.send(null);
+     xmlHttp.send(null);
+     
 	if (!async)
 		return SOAPClient._onLoadWsdl(url, method, parameters, async, callback, xmlHttp);
 }
@@ -176,18 +182,27 @@ SOAPClient._sendSoapRequest = function(url, method, parameters, async, callback,
 	}
 	else
 		xmlHttp.open("POST", url, async);
+       xmlHttp.timeout = 30000;
 	var soapaction = ((ns.lastIndexOf("/") != ns.length - 1) ? ns + "/" : ns) + encodeURIComponent(method);
 	xmlHttp.setRequestHeader("SOAPAction", soapaction);
 	xmlHttp.setRequestHeader("Content-Type", "text/xml; charset=utf-8");
 	if(async) 
 	{
+        xmlHttp.ontimeout = function(e){
+            callback(null, e.type);
+        };
 		xmlHttp.onreadystatechange = function() 
 		{
-			if(xmlHttp.readyState == 4)
-				SOAPClient._onSendSoapRequest(method, async, callback, wsdl, xmlHttp);
-		}
-	}
-	xmlHttp.send(sr);
+             if (xmlHttp.readyState === 4) {
+                if (xmlHttp.status === 200) {
+                     SOAPClient._onSendSoapRequest(method, async, callback, wsdl, xmlHttp);
+                } else {                   
+                    callback(null, xmlHttp.statusText);
+                }
+            }  
+		} 
+	}   	
+    xmlHttp.send(sr);
 	if (!async)
 		return SOAPClient._onSendSoapRequest(method, async, callback, wsdl, xmlHttp);
 }
@@ -195,7 +210,7 @@ SOAPClient._sendSoapRequest = function(url, method, parameters, async, callback,
 SOAPClient._onSendSoapRequest = function(method, async, callback, wsdl, req) 
 {
 	var o = null;
-	var nd = SOAPClient._getElementsByTagName(req.responseXML, method + "Result");
+	var nd = SOAPClient._getElementsByTagName(req.responseXML, method + "Result");    
 	if(nd.length == 0)
 		nd = SOAPClient._getElementsByTagName(req.responseXML, "return");	// PHP web Service?
 	if(nd.length == 0)
@@ -209,7 +224,7 @@ SOAPClient._onSendSoapRequest = function(method, async, callback, wsdl, req)
 		}
 	}
 	else
-		o = SOAPClient._soapresult2object(nd[0], wsdl);
+		o = SOAPClient._soapresult2object(nd[0], wsdl);        
 	if(callback)
 		callback(o, req.responseXML);
 	if(!async)
